@@ -1,0 +1,187 @@
+import { Repository } from '../repository';
+import * as yargs from 'yargs';
+import * as fs from 'mz/fs';
+import * as Path from 'path';
+import * as util from 'util';
+import { Writable } from 'stream';
+import { Validator, parseFile, PackageExpression } from '../';
+import * as _ from 'lodash';
+const DEBUG = true
+
+export function run() {
+
+
+    app()
+        .catch(e => {
+            console.log(e)
+            if (DEBUG) console.log(e.stack)
+            else
+                console.error(e.message);
+        })
+
+}
+
+interface File {
+    content: string;
+    path: string;
+}
+
+
+interface AstFile {
+    content: PackageExpression;
+    path: string;
+}
+
+
+interface Options {
+    pretty: boolean;
+    output?: string;
+    generate?: string[];
+}
+
+
+async function app() {
+    const argv = yargs.option("ast", {
+        alias: 'a',
+        default: false
+    }).option("pretty", {
+        alias: "p",
+        default: false
+    }).option("output", {
+        alias: 'o'
+    }).option("generate", {
+        alias: 'g'
+    }).help()
+        .argv
+
+    const filePromises = Promise.all(argv._.map(async (file) => {
+        return {
+            content: await parseFile(file),
+            path: file
+        }
+    }));
+
+    const repo = new Repository();
+    const [files] = await Promise.all([
+        filePromises,
+        repo.loadModules()
+    ])
+    /*const files = await Promise.all(argv._.map(async (file) => {
+        return {
+            content: await parseFile(file),
+            path: file
+        }
+    }));*/
+
+    if (argv.ast) {
+        return print_ast(files, argv as any)
+    } else if (argv.generate) {
+
+        if (!Array.isArray(argv.generate)) {
+            if (typeof (argv.generate) === 'boolean') {
+                throw new Error('-g needs a parameter');
+            }
+            argv.generate = [argv.generate];
+        }
+
+        return generate(files, argv as any)
+    }
+
+}
+
+
+function print_ast(asts: AstFile[], opts: Options) {
+    var out: string = ""
+    if (opts.pretty) {
+        out = util.inspect(asts.map(m => m.content.toJSON(false, true)), false, 20, true);
+    } else {
+        out = JSON.stringify(asts, null, 2)
+    }
+
+    var target: fs.WriteStream
+    if (opts.output) {
+        target = fs.createWriteStream(opts.output);
+    } else {
+        target = process.stdout as any;
+    }
+
+    target.write(new Buffer(out))
+    if (opts.output) target.close();
+}
+
+import * as lua from '../lua';
+import * as ts from '../typescript';
+import * as cpp from '../cpp';
+
+function generate_lua(files: AstFile[]): Promise<File[]> {
+    return Promise.all(files.map(async (file): Promise<any> => {
+
+        if (!file.content.endpoints.length) return null;
+
+        let output = lua.write(file.content);
+
+        return {
+            path: Path.basename(file.path, Path.extname(file.path)) + '.lua',
+            content: (await output) as string
+        }
+    })).then(m => {
+        return m.filter(m => m != null);
+    })
+}
+
+function generate_ts(files: AstFile[]): Promise<File[]> {
+    return Promise.all(files.map(async (file): Promise<any> => {
+
+        //if (!file.content.endpoints.length) return null;
+
+        let output = ts.write(file.content);
+
+        return {
+            path: Path.basename(file.path, Path.extname(file.path)) + '.ts',
+            content: (await output) as string
+        }
+    })).then(m => {
+        return m.filter(m => m != null);
+    })
+}
+
+function generate_cpp(files: AstFile[]): Promise<File[]> {
+    return Promise.all(files.map(async (file): Promise<any> => {
+
+        let gen = new cpp.CppGenerator();
+        const results = await gen.generate(file.content.copy(), file.path);
+        return results;
+
+    })).then(m => _.flatten(m));
+}
+
+async function generate(asts: AstFile[], opts: Options) {
+
+    if (!opts.generate) return;
+    let output: File[] = []
+    for (let o of opts.generate) {
+        switch (o) {
+            case "lua":
+                output.push(...(await generate_lua(asts)));
+            case "typescript":
+                output.push(...(await generate_ts(asts)));
+            case "cpp":
+                output.push(...(await generate_cpp(asts)));
+        }
+    }
+
+    if (opts.output) {
+        let root = opts.output;
+        if (!(await fs.stat(root)).isDirectory) {
+            throw new Error('output is not a directory');
+        }
+
+        await Promise.all(output.map(m => {
+            return fs.writeFile(Path.join(root, m.path), m.content);
+        }));
+
+    } else {
+        process.stdout.write(output.map(m => m.content).join('\n\n') + '\n');
+    }
+
+}
