@@ -85,7 +85,7 @@ export class Repository {
         if (mod.default) mod = mod.default;
 
         if (typeof mod === 'function') {
-            this.addModule(m.pkgjson.name.replace('apigen-generator', ''), mod);
+            this.addModule(m.pkgjson.name.replace('apigen-generator-', ''), mod);
         } else {
             throw new Error(`not a module ${m.path}`);
         }

@@ -10,7 +10,7 @@ import { handleAst } from './ast';
 import { handleGenerate } from './generate';
 import { Repository } from './repository';
 
-const DEBUG = true
+const DEBUG = false
 
 
 export function run() {
@@ -18,7 +18,6 @@ export function run() {
 
     app()
         .catch(e => {
-            console.log(e)
             if (DEBUG) console.log(e.stack)
             else
                 console.error(e.message);
@@ -85,7 +84,7 @@ async function app() {
         } else if (!m.length) {
             console.log('No generators')
         } else {
-            console.log(repo.listModules().map(m => m.name).join('\n'));
+            console.log('Generators:\n ' + repo.listModules().map(m => m.name).join('\n  '));
         }
 
     }
