@@ -1,7 +1,7 @@
-import { Options, AstFile } from './types';
+import { Options } from './types';
 import * as fs from 'mz/fs';
 import * as util from 'util';
-
+import {AstFile} from 'apigen-compiler';
 
 function print_ast(asts: AstFile[], opts: Options) {
     var out: string = ""

@@ -1,14 +1,17 @@
 import { Repository } from './repository';
-import { Options, AstFile } from './types';
+import { Options } from './types';
+import {AstFile} from 'apigen-compiler';
 import * as _ from 'lodash';
 //import * as fs from 'mz/fs';
 //import * as util from 'util';
 
 
+
 async function print_generate(asts: AstFile[], repo: Repository, opts: Options) {
 
-    await repo.loadModules()
 
+    
+    await repo.loadModules()
 
     /*var out: string = ""
     if (opts.pretty) {
@@ -28,7 +31,8 @@ async function print_generate(asts: AstFile[], repo: Repository, opts: Options) 
     if (opts.output) target.close();*/
     _.flatten(opts.generate!.map(m => repo.generator(m)).filter(m => m != undefined)
         .map(m => {
-            return asts.map(v => m!.generate(v.content, v.path))
+            return m!.generate(ast)
+            //return asts.map(v => m!.generate(v.content, v.path))
         })).map(m => {
             console.log(m)
         })
