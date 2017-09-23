@@ -24,6 +24,7 @@ function print_ast(asts: AstFile[], opts: Options) {
 }
 
 export function handleAst(asts: AstFile[], opts: Options) {
+    
     if (!asts.length) {
         console.log('No files')
         return;

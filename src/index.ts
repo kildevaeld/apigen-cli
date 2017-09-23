@@ -49,8 +49,10 @@ async function app() {
         .argv
 
 
-
-    const filePromises = Promise.all(argv._.map(async (file) => {
+    let inputs = argv._.slice(0);
+    if (argv.ast && !argv.generate) inputs.push(argv.ast);
+    
+    const filePromises = Promise.all(inputs.map(async (file) => {
         return {
             content: await parseFile(Path.resolve(file)),
             path: file
