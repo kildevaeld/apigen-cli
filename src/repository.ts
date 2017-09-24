@@ -39,7 +39,7 @@ export class Repository {
     }
 
     generator(name: string): IGenerator | undefined {
-
+        
         return this.modules[name] ? this.modules[name].genenerator() : undefined;
     }
 
@@ -92,10 +92,11 @@ export class Repository {
 
     }
 
-    private addModule(name: string, fn: Constructor<IGenerator>) {
+    public addModule(name: string, fn: Constructor<IGenerator>) {
+        
         this.modules[name] = {
             name: name,
-            genenerator: () => new fn()
+            genenerator: function () { return new fn() }
         }
     }
 

@@ -9,7 +9,7 @@ import * as _ from 'lodash';
 import { handleAst } from './ast';
 import { handleGenerate } from './generate';
 import { Repository } from './repository';
-
+import {addGenerators} from './generators';
 const DEBUG = false
 
 
@@ -62,6 +62,8 @@ async function app() {
 
     const repo = new Repository();
 
+    addGenerators(repo);
+
     const files = await filePromises;
 
 
@@ -76,6 +78,7 @@ async function app() {
                 throw new Error('-g needs a parameter');
             }
             argv.generate = [argv.generate];
+           
         }
         return handleGenerate(files, repo, argv as any)
     } else if (argv.list) {

@@ -1,0 +1,95 @@
+package service
+
+import (
+    "net/http"
+    "bytes"
+)
+
+{{#eachDefinition children}}
+{{#if isObject}}
+type {{camelcase name}} struct {
+    {{#eachObject value}}
+    {{camelcase name}} {{{type}}}
+    {{/eachObject}}
+}
+{{else}}
+type {{camelcase name}} {{{value}}}
+{{/if}}
+{{/eachDefinition}}
+
+{{#if endpoints.length}}
+
+type {{camelcase name}} struct {
+    {{#hasAuth .}}
+    token string
+    {{/hasAuth}}
+    url string
+}
+
+{{#eachEndpoint children}}
+
+{{#hasQuery .}}
+type {{camelcase name}}Options struct {
+    {{#eachObject query}}
+    {{camelcase name}} {{{type}}}
+    {{/eachObject}}
+}
+{{/hasQuery}}
+
+func (b *{{camelcase ../name}}) {{camelcase name}}({{parameters .}}) ({{typestring return}},error) {
+    var reader io.Reader
+    {{#hasBody .}}
+    if bs, err := b.encodeBody(body); err == nil {
+        reader = bytes.NewReader(bs)
+    } else {
+        return nil, err
+    }
+    {{/hasBody}}
+    req, err := http.NewRequest("{{uppercase method}}", b.buildUrl({{{buildPath .}}}), reader)
+    if err != nil {
+        return nil, err
+    }
+
+    var resp http.Response
+    if resp, err = req.Do(); err != nil {
+        return nil, err
+    }
+
+    
+    var out {{{typestring return}}}
+    if err = b.decodeReturn(resp, &out); err != nil {
+        return nil, err
+    }
+
+    return &out, nil
+}
+
+{{/eachEndpoint}}
+
+
+func (b *{{camelcase name}}) buildUrl(path string) string {
+    return b.url + path
+}
+
+func (b *{{camelcase name}}) decodeReturn(resp http.Response, i interface{}) error {
+
+    return nil
+}
+
+func (b *{{camelcase name}}) encodeBody(i interface{}) ([]byte, error) {
+    
+    return nil,nil
+}
+
+
+func New{{camelcase name}}(url string) *{{camelcase name}} {
+    if url == "" {
+        url = "{{url .}}"
+    }
+
+    return &{{camelcase name}}{
+        url: url,
+    }
+}
+
+{{/if}}
