@@ -29,7 +29,7 @@ export interface TemplateRenderer {
 
 
 export interface HandleBarsOptions {
-    typeToString?: (e: Expression) => string;
+    typeToString?: (e: Expression, endpoint?:EndpointExpression) => string;
 }
 
 export namespace temp {
@@ -80,7 +80,7 @@ export namespace temp {
         hbs.registerHelper("url", (context: any, options: any) => {
             let e = check<PackageExpression>(context, Type.Package);
             const url = e.children.find((m: any) => m.type == Type.Url) as UrlExpression
-            return `${url.protocol}://${url.domain}`;
+            return url ? `${url.protocol}://${url.domain}`: "\"\""; 
         });
 
 
@@ -96,6 +96,12 @@ export namespace temp {
             if (o.typeToString) return o.typeToString(context);
             return "<undefined>";
         });
+
+
+        hbs.registerHelper("property", function (this: any, end: any, prop: any, options: any) {
+            const e = check<EndpointExpression>(end, Type.Endpoint);
+            return o.typeToString!(e.findProperty<PropertyExpression>(prop), e);
+        })
 
         hbs.registerHelper("eachEndpoint", (context: any, options: any) => {
             var ret = ""

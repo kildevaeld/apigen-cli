@@ -74,6 +74,9 @@ export class GolangGenerator implements IGenerator {
     }
 
     private typeToString(o: Expression, end?: EndpointExpression): string {
+        
+        const camel = (str: string) => _.upperFirst(_.camelCase(str)) 
+     
         switch (o.type) {
             case Type.Array:
                 return '[]' + this.typeToString((o as ArrayExpression).value, end);
@@ -84,6 +87,7 @@ export class GolangGenerator implements IGenerator {
                     case Primitive.Number: return 'int';
                     case Primitive.String: return 'string';
                 }
+                break;
             }
             case Type.Object: {
                 let e = (o as ObjectExpression)
@@ -95,16 +99,29 @@ export class GolangGenerator implements IGenerator {
                     return e.imported!
                 }
                 //console.warn(e)
+                break;
             }
+
+            case Type.Definition: return camel((o as DefinitionExpression).name);
+
+            case Type.StringEnum: return "string"
 
             case Type.Property: {
                 let e = (o as PropertyExpression);
                 if (!end) return '';
+
+                if (e.value.type !== Type.Object) return this.typeToString(e.value)
+                else if (e.value instanceof ObjectExpression) {
+                    if (e.value.imported) return camel(e.value.imported);
+                } 
                 switch (e.name) {
                     case "query":
                         return _.upperFirst(_.camelCase(end.name)) + 'Options'
                     case "body":
                         return _.upperFirst(_.camelCase(end.name)) + 'Request'
+                    case "return": 
+                        return _.upperFirst(_.camelCase(end.name)) + "Result"
+                    
                 }
             }
 

@@ -36,7 +36,15 @@ type {{camelcase name}}Options struct {
 }
 {{/hasQuery}}
 
-func (b *{{camelcase ../name}}) {{camelcase name}}({{parameters .}}) ({{typestring return}},error) {
+{{#hasReturn .}}
+type {{camelcase name}}Result struct {
+    {{#eachObject return}}
+    {{camelcase name}} {{type}}
+    {{/eachObject}}
+}
+{{/hasReturn}}
+
+func (b *{{camelcase ../name}}) {{camelcase name}}({{parameters .}}) (*{{property . "return"}},error) {
     var reader io.Reader
     {{#hasBody .}}
     if bs, err := b.encodeBody(body); err == nil {
@@ -56,7 +64,7 @@ func (b *{{camelcase ../name}}) {{camelcase name}}({{parameters .}}) ({{typestri
     }
 
     
-    var out {{{typestring return}}}
+    var out {{property . "return"}}
     if err = b.decodeReturn(resp, &out); err != nil {
         return nil, err
     }
