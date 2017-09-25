@@ -1,7 +1,7 @@
 import {
     IGenerator, AstFile, Result, PackageExpression, EndpointExpression,
     DefinitionExpression, Expression, ArrayExpression, PrimitiveExpression,
-    Primitive, Type, PropertyExpression, ObjectExpression
+    TokenAuthentication,  Primitive, Type, PropertyExpression, ObjectExpression
 } from 'apigen-compiler'
 import * as Path from 'path';
 import { temp } from './template';
@@ -112,7 +112,7 @@ export class GolangGenerator implements IGenerator {
 
                 if (e.value.type !== Type.Object) return this.typeToString(e.value)
                 else if (e.value instanceof ObjectExpression) {
-                    if (e.value.imported) return camel(e.value.imported);
+                    if (e.value.imported) return e.value.imported.substr(e.value.imported.indexOf('.')+1);
                 } 
                 switch (e.name) {
                     case "query":
@@ -165,6 +165,22 @@ export class GolangGenerator implements IGenerator {
             return p.join(', ')
         })
 
+
+        this.hbs.registerHelper("authheader", (context: any) => {
+            let e = temp.check<EndpointExpression>(context, Type.Endpoint);
+
+            let auth = e.findProperty("auth")
+
+            switch (auth.value.type) {
+                case Type.TokenAuthentication: {
+                    let ee = auth.value as TokenAuthentication;
+                    return `"${ee.header[0]}", "${ee.header.length ? ee.header[1] + ' ' : ''}"`
+                }
+            }
+
+            return "";
+
+        })
 
     }
 

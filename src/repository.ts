@@ -93,6 +93,11 @@ export class Repository {
     }
 
     public addModule(name: string, fn: Constructor<IGenerator>) {
+
+        if (this.modules[name]) {
+            console.warn('warn: golang generator already defined')
+            return;
+        }
         
         this.modules[name] = {
             name: name,

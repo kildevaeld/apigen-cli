@@ -24,6 +24,7 @@ type {{camelcase name}} struct {
     token string
     {{/hasAuth}}
     url string
+    client *http.Client
 }
 
 {{#eachEndpoint children}}
@@ -43,11 +44,20 @@ type {{camelcase name}}Result struct {
     {{/eachObject}}
 }
 {{/hasReturn}}
+{{#hasBody .}}
+{{#unless body.imported}}
+type {{camelcase name}}Request struct {
+    {{#eachObject body}}
+    {{camelcase name}} {{type}}
+    {{/eachObject}}
+}
+{{/unless}}
+{{/hasBody}}
 
 func (b *{{camelcase ../name}}) {{camelcase name}}({{parameters .}}) (*{{property . "return"}},error) {
     var reader io.Reader
     {{#hasBody .}}
-    if bs, err := b.encodeBody(body); err == nil {
+    if bs, err := b.encodeBody(body, "{{mimetype .}}"); err == nil {
         reader = bytes.NewReader(bs)
     } else {
         return nil, err
@@ -58,14 +68,17 @@ func (b *{{camelcase ../name}}) {{camelcase name}}({{parameters .}}) (*{{propert
         return nil, err
     }
 
-    var resp http.Response
-    if resp, err = req.Do(); err != nil {
+    {{#if auth}}
+    req.Header.Add({{{authheader .}}} + b.token)
+    
+    {{/if}}
+    var resp *http.Response
+    if resp, err = b.client.Do(req); err != nil {
         return nil, err
     }
 
-    
     var out {{property . "return"}}
-    if err = b.decodeReturn(resp, &out); err != nil {
+    if err = b.decodeReturn(resp, &out, "{{mimetype .}}"); err != nil {
         return nil, err
     }
 
@@ -79,24 +92,54 @@ func (b *{{camelcase name}}) buildUrl(path string) string {
     return b.url + path
 }
 
-func (b *{{camelcase name}}) decodeReturn(resp http.Response, i interface{}) error {
+func (b *{{camelcase name}}) decodeReturn(resp *http.Response, i interface{}, mime string) error {
+    
 
+    defer resp.Body.Close()
+    bs, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return fmt.Errorf("could not read body: %s", err.Error())
+    }
+    
+    switch mime {
+        default:
+            return json.Unmarshal(bs, i)
+    }
     return nil
 }
 
-func (b *{{camelcase name}}) encodeBody(i interface{}) ([]byte, error) {
-    
-    return nil,nil
+func (b *{{camelcase name}}) encodeBody(i interface{}, mime string) ([]byte, error) {
+    switch mime {
+        default:
+            return json.Marshal(i)
+    }
+}
+
+func (b *{{camelcase name}}) setURL(url string) {
+    b.url = url
+}
+
+func (b *{{camelcase name}}) URL() string {
+    return b.url
+}
+
+func (b *{{camelcase name}}) SetToken(token string) {
+    b.token = token
+}
+
+func (b *{{camelcase name}}) Token() string {
+    return b.token
 }
 
 
-func New{{camelcase name}}(url string) *{{camelcase name}} {
-    if url == "" {
-        url = "{{url .}}"
-    }
+func New{{camelcase name}}() *{{camelcase name}} {
+    return New{{camelcase name}}WithClient(&http.Client{})
+}
 
+func New{{camelcase name}}WithClient(client *http.Client) *{{camelcase name}} {
     return &{{camelcase name}}{
-        url: url,
+        url: "{{url .}}",
+        client: client,
     }
 }
 

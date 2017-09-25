@@ -10,7 +10,7 @@ import { handleAst } from './ast';
 import { handleGenerate } from './generate';
 import { Repository } from './repository';
 import {addGenerators} from './generators';
-const DEBUG = false
+const DEBUG = true
 
 
 export function run() {

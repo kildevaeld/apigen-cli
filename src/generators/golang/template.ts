@@ -91,7 +91,7 @@ export namespace temp {
             } catch (e) {
                 //console.log(e)
             }
-
+        
 
             if (o.typeToString) return o.typeToString(context);
             return "<undefined>";
@@ -100,6 +100,7 @@ export namespace temp {
 
         hbs.registerHelper("property", function (this: any, end: any, prop: any, options: any) {
             const e = check<EndpointExpression>(end, Type.Endpoint);
+        
             return o.typeToString!(e.findProperty<PropertyExpression>(prop), e);
         })
 
@@ -117,7 +118,7 @@ export namespace temp {
             try {
                 e = temp.check(ctx, Type.Object);
             } catch (e) {
-                console.error(e.message);
+                console.error(e);
                 return "";
             }
 
