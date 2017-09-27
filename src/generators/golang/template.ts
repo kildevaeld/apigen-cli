@@ -29,7 +29,7 @@ export interface TemplateRenderer {
 
 
 export interface HandleBarsOptions {
-    typeToString?: (e: Expression, endpoint?:EndpointExpression) => string;
+    typeToString?: (e: Expression, endpoint?: EndpointExpression) => string;
 }
 
 export namespace temp {
@@ -80,7 +80,7 @@ export namespace temp {
         hbs.registerHelper("url", (context: any, options: any) => {
             let e = check<PackageExpression>(context, Type.Package);
             const url = e.children.find((m: any) => m.type == Type.Url) as UrlExpression
-            return url ? `${url.protocol}://${url.domain}`: "\"\""; 
+            return url ? `${url.protocol}://${url.domain}` : "\"\"";
         });
 
 
@@ -91,7 +91,7 @@ export namespace temp {
             } catch (e) {
                 //console.log(e)
             }
-        
+
 
             if (o.typeToString) return o.typeToString(context);
             return "<undefined>";
@@ -100,7 +100,7 @@ export namespace temp {
 
         hbs.registerHelper("property", function (this: any, end: any, prop: any, options: any) {
             const e = check<EndpointExpression>(end, Type.Endpoint);
-        
+
             return o.typeToString!(e.findProperty<PropertyExpression>(prop), e);
         })
 
@@ -168,6 +168,29 @@ export namespace temp {
 
         hbs.registerHelper('camelcase', (ctx: any) => {
             return _.upperFirst(_.camelCase(ctx));
+        })
+
+        hbs.registerHelper('getproperty', (ctx: any, prop: string) => {
+
+            const find = (m: Expression) => m.type != Type.Property && (m as PropertyExpression).name == prop
+
+            try {
+                let e = check<EndpointExpression>(ctx, Type.Endpoint);
+
+            } catch (e) {
+                try {
+                    console.log(ctx, prop)
+                    let p = check<PackageExpression>(ctx, Type.Package);
+                    let found = p.children.find(find) as PropertyExpression;
+                    console.log(found)
+                    if (found) return (found.value as any).value;
+                } catch (e) {
+
+                }
+
+            }
+
+            return "";
         })
 
     }
