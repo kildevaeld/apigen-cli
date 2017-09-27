@@ -43,7 +43,7 @@ export namespace temp {
                 let found = e.findPropertyValue("mime", StringExpression);
                 if (found) found.value;
             } catch (e) {
-                console.error(e)
+                //console.error(e)
             }
 
 
@@ -118,7 +118,7 @@ export namespace temp {
             try {
                 e = temp.check(ctx, Type.Object);
             } catch (e) {
-                console.error(e);
+                //console.error(e);
                 return "";
             }
 
@@ -179,7 +179,7 @@ export namespace temp {
 
             } catch (e) {
                 try {
-                    console.log(ctx, prop)
+                    //console.log(ctx, prop)
                     let p = check<PackageExpression>(ctx, Type.Package);
                     let found = p.children.find(find) as PropertyExpression;
                     console.log(found)

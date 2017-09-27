@@ -3,6 +3,7 @@ package {{package}}
 import (
     "net/http"
     "bytes"
+    queryenc "github.com/google/go-querystring/query"
 )
 
 {{#eachDefinition children}}
@@ -32,7 +33,7 @@ type {{camelcase name}} struct {
 {{#hasQuery .}}
 type {{camelcase name}}Options struct {
     {{#eachObject query}}
-    {{camelcase name}} {{{type}}}
+    {{goidentifier name}} {{{type}}} `url:"{{{name}}}"`
     {{/eachObject}}
 }
 {{/hasQuery}}
@@ -54,7 +55,18 @@ type {{camelcase name}}Request struct {
 {{/unless}}
 {{/hasBody}}
 
+
 func (b *{{camelcase ../name}}) {{camelcase name}}({{parameters .}}) (*{{property . "return"}},error) {
+    
+    url := b.buildUrl({{{buildPath .}}})
+    {{#hasQuery .}}
+    if v, err := queryenc.Values(query); err == nil {
+        url += "?" + v    
+    } else {
+        return nil, err
+    }
+    {{/hasQuery}}
+    
     var reader io.Reader
     {{#hasBody .}}
     if bs, err := b.encodeBody(body, "{{mimetype .}}"); err == nil {
@@ -63,7 +75,7 @@ func (b *{{camelcase ../name}}) {{camelcase name}}({{parameters .}}) (*{{propert
         return nil, err
     }
     {{/hasBody}}
-    req, err := http.NewRequest("{{uppercase method}}", b.buildUrl({{{buildPath .}}}), reader)
+    req, err := http.NewRequest("{{uppercase method}}", url, reader)
     if err != nil {
         return nil, err
     }
