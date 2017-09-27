@@ -9,7 +9,7 @@ import (
 {{#if isObject}}
 type {{camelcase name}} struct {
     {{#eachObject value}}
-    {{camelcase name}} {{{type}}}
+    {{goidentifier name}} {{{type}}} `json:"{{{name}}}"`
     {{/eachObject}}
 }
 {{else}}
@@ -110,23 +110,39 @@ func (b *{{camelcase name}}) decodeReturn(resp *http.Response, i interface{}, mi
 
 func (b *{{camelcase name}}) encodeBody(i interface{}, mime string) ([]byte, error) {
     switch mime {
+        case "application/json":
         default:
             return json.Marshal(i)
     }
+
+    return nil,errors.New("could not unmarshal")
 }
 
-func (b *{{camelcase name}}) setURL(url string) {
-    b.url = url
+// SetURL sets the base url
+func (b *{{camelcase name}}) SetURL(u string) error {
+    if pu, err := url.Parse(u); err != nil {
+        u = pu.String()
+        if u[len(u)-1] == '/' {
+            u = u[0:len(u)-2]
+        }
+        b.url = u
+        return nil
+    } else {
+        return err
+    }
 }
 
+// URL returns base url
 func (b *{{camelcase name}}) URL() string {
     return b.url
 }
 
+// SetToken sets the token used for authorized request
 func (b *{{camelcase name}}) SetToken(token string) {
     b.token = token
 }
 
+// Token returns token
 func (b *{{camelcase name}}) Token() string {
     return b.token
 }

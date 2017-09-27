@@ -1,7 +1,7 @@
 import {
     IGenerator, AstFile, Result, PackageExpression, EndpointExpression,
     DefinitionExpression, Expression, ArrayExpression, PrimitiveExpression,
-    TokenAuthentication,  Primitive, Type, PropertyExpression, ObjectExpression
+    TokenAuthentication, Primitive, Type, PropertyExpression, ObjectExpression
 } from 'apigen-compiler'
 import * as Path from 'path';
 import { temp } from './template';
@@ -56,11 +56,11 @@ export class GolangGenerator implements IGenerator {
         const buffer = await fs.readFile(Path.join(TemplatePath, "golang.hbs")),
             tpl = this.hbs.compile(buffer.toString());
 
-        
+
         let packages = this.collapse(e);
 
-        
-        return Object.keys(packages).map( m => {
+
+        return Object.keys(packages).map(m => {
             return {
                 path: m.toLowerCase() + '.go',
                 content: new Buffer(tpl(packages[m]), 'utf8')
@@ -74,9 +74,9 @@ export class GolangGenerator implements IGenerator {
     }
 
     private typeToString(o: Expression, end?: EndpointExpression): string {
-        
-        const camel = (str: string) => _.upperFirst(_.camelCase(str)) 
-     
+
+        const camel = (str: string) => _.upperFirst(_.camelCase(str))
+
         switch (o.type) {
             case Type.Array:
                 return '[]' + this.typeToString((o as ArrayExpression).value, end);
@@ -112,16 +112,16 @@ export class GolangGenerator implements IGenerator {
 
                 if (e.value.type !== Type.Object) return this.typeToString(e.value)
                 else if (e.value instanceof ObjectExpression) {
-                    if (e.value.imported) return e.value.imported.substr(e.value.imported.indexOf('.')+1);
-                } 
+                    if (e.value.imported) return e.value.imported.substr(e.value.imported.indexOf('.') + 1);
+                }
                 switch (e.name) {
                     case "query":
                         return _.upperFirst(_.camelCase(end.name)) + 'Options'
                     case "body":
                         return _.upperFirst(_.camelCase(end.name)) + 'Request'
-                    case "return": 
+                    case "return":
                         return _.upperFirst(_.camelCase(end.name)) + "Result"
-                    
+
                 }
             }
 
@@ -136,17 +136,23 @@ export class GolangGenerator implements IGenerator {
             typeToString: this.typeToString.bind(this)
         });
 
+        this.hbs.registerHelper("goidentifier", (context: string) => {
+            return _.upperFirst(_.camelCase(context.replace(/^[_$0-9]?/, '')));
+        })
+
         this.hbs.registerHelper('buildPath', (context: any, optios: any) => {
             let e = temp.check<EndpointExpression>(context, Type.Endpoint);
-            let p = e.path
+            let p = e.path.slice(0)
             let l = e.path.length
+            let c = 0;
             e.path.forEach((path, i) => {
-                if (path[0] == ":")
+                if (path[0] == ":") {
+                    c++;
                     p[i] = path.substr(1)
-                else
+                } else
                     p[i] = '"' + path + (i == l - 1 ? "" : "") + '"'
             });
-            return p.join('+"/"+');
+            return c == 0 ? `"/${e.path.join('/')}"` : '"/"+' + p.join('+"/"+');
         });
 
         this.hbs.registerHelper('parameters', (context: any, optios: any) => {
