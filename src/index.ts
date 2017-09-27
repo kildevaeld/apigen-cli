@@ -9,7 +9,7 @@ import * as _ from 'lodash';
 import { handleAst } from './ast';
 import { handleGenerate } from './generate';
 import { Repository } from './repository';
-import {addGenerators} from './generators';
+import { addGenerators } from './generators';
 const DEBUG = true
 
 
@@ -51,11 +51,16 @@ async function app() {
 
     let inputs = argv._.slice(0);
     if (argv.ast && !argv.generate) inputs.push(argv.ast);
-    
+
     const filePromises = Promise.all(inputs.map(async (file) => {
-        return {
-            content: await parseFile(Path.resolve(file)),
-            path: file
+        try {
+            return {
+                content: await parseFile(Path.resolve(file)),
+                path: file
+            }
+        } catch (e) {
+            e.path = file;
+            throw e;
         }
     }));
 
@@ -64,7 +69,12 @@ async function app() {
 
     addGenerators(repo);
 
-    const files = await filePromises;
+    let files: { content: PackageExpression, path: string }[]
+    try {
+        files = await filePromises;
+    } catch (e) {
+        console.log(e)
+    }
 
 
     const opts: Options = argv as any;
@@ -78,7 +88,7 @@ async function app() {
                 throw new Error('-g needs a parameter');
             }
             argv.generate = [argv.generate];
-           
+
         }
         return handleGenerate(files, repo, argv as any)
     } else if (argv.list) {

@@ -61,7 +61,7 @@ func (b *{{camelcase ../name}}) {{camelcase name}}({{parameters .}}) (*{{propert
     url := b.buildUrl({{{buildPath .}}})
     {{#hasQuery .}}
     if v, err := queryenc.Values(query); err == nil {
-        url += "?" + v    
+        url += "?" + v.Encode()  
     } else {
         return nil, err
     }

@@ -170,28 +170,6 @@ export namespace temp {
             return _.upperFirst(_.camelCase(ctx));
         })
 
-        hbs.registerHelper('getproperty', (ctx: any, prop: string) => {
-
-            const find = (m: Expression) => m.type != Type.Property && (m as PropertyExpression).name == prop
-
-            try {
-                let e = check<EndpointExpression>(ctx, Type.Endpoint);
-
-            } catch (e) {
-                try {
-                    //console.log(ctx, prop)
-                    let p = check<PackageExpression>(ctx, Type.Package);
-                    let found = p.children.find(find) as PropertyExpression;
-                    console.log(found)
-                    if (found) return (found.value as any).value;
-                } catch (e) {
-
-                }
-
-            }
-
-            return "";
-        })
 
     }
 
