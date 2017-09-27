@@ -102,6 +102,8 @@ func (b *{{camelcase name}}) decodeReturn(resp *http.Response, i interface{}, mi
     }
     
     switch mime {
+        case "application/json":
+            return json.Unmarshal(bs, i)
         default:
             return json.Unmarshal(bs, i)
     }
@@ -111,6 +113,7 @@ func (b *{{camelcase name}}) decodeReturn(resp *http.Response, i interface{}, mi
 func (b *{{camelcase name}}) encodeBody(i interface{}, mime string) ([]byte, error) {
     switch mime {
         case "application/json":
+            return json.Marshal(i)
         default:
             return json.Marshal(i)
     }
